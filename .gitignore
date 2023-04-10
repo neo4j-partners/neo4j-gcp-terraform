@@ -1,3 +1,5 @@
 keys.json
 terraform.tfvars
 out/**
+.terraform.lock.hcl
+.terraform/**
