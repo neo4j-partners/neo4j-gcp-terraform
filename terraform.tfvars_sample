@@ -1,0 +1,28 @@
+#--------------------------------------------------------------
+# Project
+#--------------------------------------------------------------
+project = "<Project ID>"
+region = "us-east4"
+zone = "us-east4-a"
+service_account = "<Service-Account>"
+
+#--------------------------------------------------------------
+# Resources
+#--------------------------------------------------------------
+vpc_name = "vpc-neo4j"
+subnetwork_name = "subnetwork-neo4j"
+
+#--------------------------------------------------------------
+# Neo4j
+#--------------------------------------------------------------
+vm_os_image = "projects/neo4j-aura-gcp/global/images/neo4j-enterprise-edition-byol-v20230202"
+env = "thd"
+neo4j_version = "5"
+adminPassword = "foobar123"
+nodeCount = 3
+installBloom = "No"
+bloomLicenseKey = "None"
+installGraphDataScience = "No"
+graphDataScienceLicenseKey = "None"
+
+enable_health_check = true
