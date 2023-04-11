@@ -3,3 +3,4 @@ terraform.tfvars
 out/**
 .terraform.lock.hcl
 .terraform/**
+terraform.tfstate

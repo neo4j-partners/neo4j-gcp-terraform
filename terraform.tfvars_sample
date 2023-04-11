@@ -5,6 +5,7 @@ project = "<Project ID>"
 region = "us-east4"
 zone = "us-east4-a"
 service_account = "<Service-Account>"
+credentials = keys/keys.json
 
 #--------------------------------------------------------------
 # Resources

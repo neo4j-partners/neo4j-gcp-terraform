@@ -1,11 +1,9 @@
 # Neo4j Deployment using Terraform (GCP)
-
 This repo provides [Terraform](https://www.terraform.io/) templates to support deployment of Neo4j Graph Data Platform in some of the major Cloud Service Providers.
 
 ## **Prerequisites**
 
 ### Terraform
-
 A working Terraform setup in your local machine or host which is going to be used to perform the Cloud deployments. You can get the latest version of Terraform [**here**](https://www.terraform.io/downloads.html). I highly go through introduction tutorials [**here**](https://learn.hashicorp.com/tutorials/terraform/infrastructure-as-code?in=terraform/gcp-get-started) for GCP.
 
 ### Environment Setup
@@ -19,11 +17,10 @@ To set up your Google environment, run the command:
 
 Now, you'll need a copy of this repo.  To make a local copy, run the commands:
 
-    git clone https://github.com/neo4j-field/neo4j-terraform-deployment.git
-    cd neo4j-terraform-deployment/Neo4jCluster
+    git clone https://github.com/neo4j-field/neo4j-gcp-terraform-thd
+    cd neo4j-gcp-terraform
     
 ## **Folder structure**
-
 All the templates in this repo follow a similar folder structure.
 
 ```
@@ -39,8 +36,6 @@ All the templates in this repo follow a similar folder structure.
 
 <br>
 
-<br>
-
 ### Google Cloud Platform (GCP)
 
 You will need access to a GCP user account with privileges to create Service Account and assign Roles to support deployment using Terraform.
@@ -48,7 +43,6 @@ You will need access to a GCP user account with privileges to create Service Acc
 <br>
 
 ## **Setup**
-
 1. Setup Terraform
 2. Clone this repo
 3. Create a Service Account and assign the following roles:

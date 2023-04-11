@@ -52,34 +52,3 @@ resource "google_compute_firewall" "neo4j-access-external" {
   target_tags   = var.firewall_target_tags
   priority      = 1000
 }
-
-/*
-Setup DNS
-resource "google_dns_managed_zone" "cluster-private-zone" {
-  name        = "${var.env}-private-zone"
-  dns_name    = var.private_zone_dns
-
-  labels = {
-    "env"   = var.env
-    "group" = var.labels_group
-  }
-
-  visibility = "private"
-
-  private_visibility_config {
-    networks {
-      network_url = google_compute_network.vpc-custom.id
-    }
-  }
-}
-
-resource "google_dns_record_set" "recordset" {
-  # provider = "google-beta"
-  managed_zone = google_dns_managed_zone.cluster-private-zone.name
-  name         = var.recordset_name
-  rrdatas      = [google_compute_forwarding_rule.neo4j-forwardingrule.ip_address]
-  # Type and TTL are hard set 
-  type = "A"
-  ttl  = 86400
-}
-*/
