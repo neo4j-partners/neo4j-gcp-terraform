@@ -50,12 +50,26 @@ variable "nodeCount" {
   description = "Number of Neo4j nodes to be deployed"
   type        = number
   default     = 3
+  validation {
+     condition = anytrue([
+      var.nodeCount == 1,
+      var.nodeCount == 3,
+      var.nodeCount == 4,
+      var.nodeCount == 5,
+      var.nodeCount == 6,
+      var.nodeCount == 7])
+     error_message = "Invalid number of nodes for a cluster"
+  }
 }
 
 variable "installBloom" {
-  description = "Install Neo4j Bloom (Yes/No)"
+  description = "Install Neo4j Bloom"
   type        = string
   default     = "No"
+  validation {
+    condition = var.installBloom == "No" || var.installBloom == "Yes"
+    error_message = "Choose Yes or No"
+  }
 }
 
 variable "bloomLicenseKey" {
@@ -64,9 +78,13 @@ variable "bloomLicenseKey" {
 }
 
 variable "installGraphDataScience" {
-    description = "Install Neo4j GDS (Yes/No)"
+    description = "Install Neo4j GDS"
     type = string
     default = "No"
+  validation {
+    condition = var.installGraphDataScience == "No" || var.installGraphDataScience == "Yes"
+    error_message = "Choose Yes or No"
+  }
 }
 
 variable "graphDataScienceLicenseKey" {
