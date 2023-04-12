@@ -11,7 +11,6 @@ credentials = keys/keys.json
 # Resources
 #--------------------------------------------------------------
 vpc_name = "vpc-neo4j"
-subnetwork_name = "subnetwork-neo4j"
 
 #--------------------------------------------------------------
 # Neo4j

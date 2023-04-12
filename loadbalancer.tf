@@ -1,16 +1,15 @@
 # ------------------------------------------------------------------------------
 # CREATE FORWARDING RULE
 # ------------------------------------------------------------------------------
-resource "google_compute_forwarding_rule" "neo4j-forwardingrule" {
+resource "google_compute_forwarding_rule" "http" {
   provider              = google-beta
   project               = var.project
-  name                  = "http-forwardingrule-${var.env}"
+  name                  = "${var.vpc_name}-http-${var.env}"
   region                = var.region
-  # Only used for INTERNAL forwarding
-  #network               = google_compute_network.vpc-custom.id
   target                = google_compute_target_pool.neo4j-tp.self_link
   load_balancing_scheme = "EXTERNAL"
-#  port_range            = "0.0.0.0/0"
+  all_ports             = true
+  #ports                 = [7474, 7687]
   ip_protocol           = "TCP"
 
   labels = {

@@ -22,7 +22,6 @@ resource "google_compute_instance" "neo4j-gce" {
     network    = google_compute_network.vpc-custom.id
     subnetwork = google_compute_subnetwork.sub-custom.id
 
-    # Assign public ip
     access_config {
     }
   }
