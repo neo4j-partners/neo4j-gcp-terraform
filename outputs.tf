@@ -15,7 +15,7 @@ output "neo4j_browser_url" {
 
 output "neo4j_bloom_url" {
   description = "Neo4j Bloom URL"
-  value = "http://${google_compute_forwarding_rule.http.ip_address}:7474/browser/bloom"
+  value = "http://${google_compute_forwarding_rule.http.ip_address}:7474/bloom"
 }
 
 output "neo4j_bolt_url" {
