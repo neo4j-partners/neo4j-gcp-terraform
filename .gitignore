@@ -1,4 +1,5 @@
 keys.json
+keys/*.txt
 terraform.tfvars
 out/**
 terraform*
