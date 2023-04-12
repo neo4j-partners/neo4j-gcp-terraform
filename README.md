@@ -4,31 +4,34 @@ This repo provides [Terraform](https://www.terraform.io/) templates to support d
 ## **Prerequisites**
 
 ### Terraform
-A working Terraform setup in your local machine or host which is going to be used to perform the Cloud deployments. You can get the latest version of Terraform [**here**](https://www.terraform.io/downloads.html). I highly go through introduction tutorials [**here**](https://learn.hashicorp.com/tutorials/terraform/infrastructure-as-code?in=terraform/gcp-get-started) for GCP.
+A working Terraform setup in your local machine or host which is going to be used to perform the Cloud deployments. You can get the latest version of Terraform [**here**](https://www.terraform.io/downloads.html). It is highly recommended to go through introduction tutorials [**here**](https://learn.hashicorp.com/tutorials/terraform/infrastructure-as-code?in=terraform/gcp-get-started) for GCP.
 
 ### Environment Setup
 You will need a GCP account.
 
 We also need to install glcoud.  Instructions for installing the Google Cloud SDK that includes gcloud are [here](https://cloud.google.com/sdk/).
 
-To set up your Google environment, run the command:
-
-    gcloud init
-
 Now, you'll need a copy of this repo.  To make a local copy, run the commands:
 
     git clone https://github.com/neo4j-field/neo4j-gcp-terraform-thd
     cd neo4j-gcp-terraform
     
+To set up your Google environment and log into Google, run the command:
+
+    gcloud init
+    gcloud application-default login
+
 ## **Folder structure**
 All the templates in this repo follow a similar folder structure.
 
 ```
 ./
 ./main.tf           <-- Terraform file that contains the infrastruture deployment instructions (Infrastruture and Neo4j configs are parameterised and will be passed through the `variable.tf` file)
+./loadbalancer.tf   <-- Terraform file that contains the load balancing infrastruture
+./network.tf        <-- Terraform file that contains the network infrastruture
 ./provider.tf       <-- Terraform file that contains cloud provider and project information
 ./variables.tf      <-- Terraform file that contains all the input variables that is required by the `main.tf` file to deploy the infrastruture and Neo4j
-./terraform.tfvars  <-- Terraform variables files that contains values to pass to the script. Overrode default values defined in variables.tf. See terraform.tfvars_sample
+./terraform.tfvars  <-- Terraform variables files that contains values to pass to the script. Override default values defined in variables.tf. See terraform.tfvars_sample
 ./keys              <-- Folder contains Cloud Service Provider Service Account Keys (This is going to vary from vendor to vendor)
 ./scripts           <-- Folder contains platform/services setup script template that will be executed after the infrastructure is provisioned
 ./out               <-- Folder contains rendered setup script that is executed at startup inside the provsioned VM
@@ -50,12 +53,10 @@ You will need access to a GCP user account with privileges to create Service Acc
    2. Compute Image User
    3. Compute Network Admin
    4. Compute Security Admin
-   5. Dataproc Administrator (Optional - If you're going to use DataProc)
-   6. Dataproc Worker (Optional - If you're going to use DataProc)
-   7. DNS Administrator (Optional - If you're using the Causal Cluster deployment template)
+   7. DNS Administrator (Optional - If you plan to assign a DNS to the load balancer)
    8. Service Account User
    9. Storage Admin
-4. Download the `keys.json` file and place it inside the `./keys/` folder
+4. For the Service Account, go to 'Manage Keys' and 'Add Key'. Save the `keys.json` file and place it inside the `./keys/` folder
 5. Create `terraform.tfvars` and fill your project details. See `terraform.tfvars_sample` for example. Check the documentation for required variables. Some of them are having default values. 
 
    Example:
@@ -66,6 +67,7 @@ You will need access to a GCP user account with privileges to create Service Acc
    zone = <Project Zone>
    # Use the email for service_account found in IAM > Service account, e.g. sa@email.com
    service_account = <Service-Account>
+   credentials = keys/keys.json
    ```
 
 <br>
@@ -73,7 +75,6 @@ You will need access to a GCP user account with privileges to create Service Acc
 ## **Usage**
 
 ### Deployment steps
-
 1. Initialise the Terraform template
 
 ```
@@ -104,7 +105,7 @@ terraform destroy
 | Name | Version |
 |------|---------|
 | <a name="provider_google"></a> [google](#provider_google) | 3.85.0 |
-| <a name="provider_google-beta"></a> [google-beta](#provider_google-beta) | 4.60.1 |
+| <a name="provider_google-beta"></a> [google-beta](#provider_google-beta) | 4.60.2 |
 | <a name="provider_local"></a> [local](#provider_local) | 2.4.0 |
 
 #### Modules

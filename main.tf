@@ -53,6 +53,7 @@ resource "google_compute_instance" "neo4j-gce" {
   }
 
   metadata_startup_script = templatefile("./scripts/core-5.sh", {
+      "vpc_name"                   = var.vpc_name
       "deployment"                 = var.env
       "region"                     = var.region
       "graphDatabaseVersion"       = var.neo4j_version
@@ -77,6 +78,7 @@ resource "local_file" "render_setup_template" {
   count    = var.nodeCount
   filename = "./out/rendered_template_${count.index + 1}.sh"
   content = templatefile("./scripts/core-5.sh", {
+      "vpc_name"                   = var.vpc_name
       "deployment"                 = var.env
       "region"                     = var.region
       "graphDatabaseVersion"       = var.neo4j_version

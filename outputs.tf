@@ -7,6 +7,15 @@ output "ssh_commands" {
 output "neo4j_browser_url" {
   description = "Neo4j Browser URL"
   value = "http://${google_compute_forwarding_rule.http.ip_address}:7474"
+  depends_on = [
+    google_compute_forwarding_rule.http,
+    google_compute_instance.neo4j-gce,
+  ]
+}
+
+output "neo4j_bloom_url" {
+  description = "Neo4j Bloom URL"
+  value = "http://${google_compute_forwarding_rule.http.ip_address}:7474/browser/bloom"
 }
 
 output "neo4j_bolt_url" {
@@ -21,4 +30,14 @@ output "neo4j_password" {
 
 output "node_count" {
   value = var.nodeCount
+}
+
+output "gds_installed" {
+  description = "Install GDS"
+  value = var.installGraphDataScience
+}
+
+output "bloom_installed" {
+  description = "Install Bloom"
+  value = var.installBloom
 }
