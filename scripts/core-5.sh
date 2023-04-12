@@ -75,31 +75,31 @@ install_apoc_plugin() {
     mv /var/lib/neo4j/labs/apoc-*-core.jar /var/lib/neo4j/plugins
 }
 configure_graph_data_science() {
-    if [[ "${installGraphDataScience}" == 'Yes' && ${nodeCount} == 1 ]]; then
-        echo "Installing Graph Data Science..."
-        cp -p /var/lib/neo4j/products/neo4j-graph-data-science-*.jar /var/lib/neo4j/plugins
+    if [[ "${installGraphDataScience}" == 'Yes' && "${graphDataScienceLicenseKey}" != 'None' ]]; then
+        if [[ ${nodeCount} == 1 ]]; then
+           echo "Installing Graph Data Science..."
+           cp -p /var/lib/neo4j/products/neo4j-graph-data-science-*.jar /var/lib/neo4j/plugins
 
-        if [[ "${graphDataScienceLicenseKey}" != 'None' ]]; then
-            echo "Writing GDS license key..."
-            mkdir -p /etc/neo4j/licenses
-            chown neo4j:neo4j /etc/neo4j/licenses
-            echo "${graphDataScienceLicenseKey}" >/etc/neo4j/licenses/neo4j-gds.license
-            sed -i '$a gds.enterprise.license_file=/etc/neo4j/licenses/neo4j-gds.license' /etc/neo4j/neo4j.conf
+           echo "Writing GDS license key..."
+           mkdir -p /etc/neo4j/licenses
+           chown neo4j:neo4j /etc/neo4j/licenses
+           echo "${graphDataScienceLicenseKey}" >/etc/neo4j/licenses/neo4j-gds.license
+           sed -i '$a gds.enterprise.license_file=/etc/neo4j/licenses/neo4j-gds.license' /etc/neo4j/neo4j.conf
+        else
+            echo "GDS can only be installed on a single node."
         fi
     fi
 }
 configure_bloom() {
-    if [[ "${installBloom}" == 'Yes' ]]; then
+    if [[ "${installBloom}" == 'Yes' && "${bloomLicenseKey}" != 'None' ]]; then
         echo "Installing Bloom..."
         cp -p /var/lib/neo4j/products/bloom-plugin-*.jar /var/lib/neo4j/plugins
 
-        if [[ "${bloomLicenseKey}" != 'None' ]]; then
-            echo "Writing Bloom license key..."
-            mkdir -p /etc/neo4j/licenses
-            chown neo4j:neo4j /etc/neo4j/licenses
-            echo "${bloomLicenseKey}" >/etc/neo4j/licenses/neo4j-bloom.license
-            sed -i '$a dbms.bloom.license_file=/etc/neo4j/licenses/neo4j-bloom.license' /etc/neo4j/neo4j.conf
-        fi
+        echo "Writing Bloom license key..."
+        mkdir -p /etc/neo4j/licenses
+        chown neo4j:neo4j /etc/neo4j/licenses
+        echo "${bloomLicenseKey}" >/etc/neo4j/licenses/neo4j-bloom.license
+        sed -i '$a dbms.bloom.license_file=/etc/neo4j/licenses/neo4j-bloom.license' /etc/neo4j/neo4j.conf
     fi
 }
 extension_config() {
