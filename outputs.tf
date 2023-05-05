@@ -6,21 +6,21 @@ output "ssh_commands" {
 
 output "neo4j_browser_url" {
   description = "Neo4j Browser URL"
-  value = "http://${google_compute_forwarding_rule.http.ip_address}:7474"
+  value = "http://${google_compute_forwarding_rule.neo4j-node-forwarding-rule.ip_address}:7474"
   depends_on = [
-    google_compute_forwarding_rule.http,
+    google_compute_forwarding_rule.neo4j-node-forwarding-rule,
     google_compute_instance.neo4j-gce,
   ]
 }
 
 output "neo4j_bloom_url" {
   description = "Neo4j Bloom URL"
-  value = "http://${google_compute_forwarding_rule.http.ip_address}:7474/bloom"
+  value = "http://${google_compute_forwarding_rule.neo4j-node-forwarding-rule.ip_address}:7474/bloom"
 }
 
 output "neo4j_bolt_url" {
   description = "Neo4j Bolt URL"
-  value = "bolt://${google_compute_forwarding_rule.http.ip_address}:7687"
+  value = "bolt://${google_compute_forwarding_rule.neo4j-node-forwarding-rule.ip_address}:7687"
 }
 
 output "neo4j_password" {

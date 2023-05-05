@@ -3,7 +3,7 @@ set -e
 echo "Running core-5.sh"
 
 echo "Using the settings:"
-echo deployment '${deployment}'
+echo env '${env}'
 echo region '${region}'
 echo adminPassword '${adminPassword}'
 echo nodeCount '${nodeCount}'
@@ -26,6 +26,25 @@ configure_firewalld() {
     firewall-cmd --zone=public --permanent --add-port=6000/tcp
     firewall-cmd --zone=public --permanent --add-port=7000/tcp
     firewall-cmd --zone=public --permanent --add-port=7688/tcp
+}
+
+mount_data_disk() {
+  echo "Format and mount the data disk to /var/lib/neo4j"
+  local -r MOUNT_POINT="/var/lib/neo4j"
+
+  local -r DATA_DISK_DEVICE=$(parted -l 2>&1 | grep Error | awk {'print $2'} | sed 's/\://')
+
+  sudo parted $DATA_DISK_DEVICE --script mklabel gpt mkpart xfspart xfs 0% 100%
+  sudo mkfs.xfs $DATA_DISK_DEVICE\1
+  sudo partprobe $DATA_DISK_DEVICE\1
+  mkdir $MOUNT_POINT
+
+  local -r DATA_DISK_UUID=$(blkid | grep $DATA_DISK_DEVICE\1 | awk {'print $2'} | sed s/\"//g)
+
+  echo "$DATA_DISK_UUID $MOUNT_POINT xfs defaults 0 0" >> /etc/fstab
+
+  systemctl daemon-reload
+  mount -a
 }
 
 install_neo4j_from_yum() {
@@ -142,14 +161,14 @@ build_neo4j_conf_file() {
 
     else
         echo "Running on multiple nodes.  Configuring membership in neo4j.conf..."
-        local -r httpIP=$(gcloud compute forwarding-rules describe "${vpc_name}-http-${deployment}" --format="value(IPAddress)" --region ${region})
+        local -r httpIP=$(gcloud compute forwarding-rules describe "neo4j-node-forwarding-rule-${env}" --format="value(IPAddress)" --region ${region})
         sed -i s/#server.default_advertised_address=localhost/server.default_advertised_address="$${httpIP}"/g /etc/neo4j/neo4j.conf
         sed -i s/#initial.dbms.default_primaries_count=1/initial.dbms.default_primaries_count=3/g /etc/neo4j/neo4j.conf
         sed -i s/#initial.dbms.default_secondaries_count=0/initial.dbms.default_secondaries_count="$(expr ${nodeCount} - 3)"/g /etc/neo4j/neo4j.conf
         sed -i s/#server.bolt.listen_address=:7687/server.bolt.listen_address="$${privateIP}":7687/g /etc/neo4j/neo4j.conf
         echo "dbms.cluster.minimum_initial_system_primaries_count=${nodeCount}" >>/etc/neo4j/neo4j.conf
         local clusterMembers
-        for ip in $(gcloud compute instances list --format "value(networkInterfaces[0].networkIP.list())" --filter "labels.env: ${deployment}"); do
+        for ip in $(gcloud compute instances list --format "value(networkInterfaces[0].networkIP.list())" --filter "labels.env: ${env}"); do
             local member="$${ip}:5000"
             clusterMembers=$${clusterMembers}$${clusterMembers:+,}$${member}
         done
@@ -166,6 +185,7 @@ start_neo4j() {
     done
 }
 
+mount_data_disk
 configure_firewalld
 install_neo4j_from_yum
 install_apoc_plugin

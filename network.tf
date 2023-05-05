@@ -1,7 +1,7 @@
 /*
 Setup VPC
 */
-resource google_compute_network vpc-custom {
+resource google_compute_network neo4j-network {
   name = "${var.vpc_name}-${var.env}"
   # This is set to false to avoid default subnetwork creation
   auto_create_subnetworks = var.auto_create_subnetworks
@@ -10,9 +10,9 @@ resource google_compute_network vpc-custom {
 /*
 Create Subnet
 */
-resource "google_compute_subnetwork" "sub-custom" {
+resource "google_compute_subnetwork" "neo4j-subnetwork" {
   name = "subnetwork-neo4j-${var.env}"
-  network = google_compute_network.vpc-custom.id
+  network = google_compute_network.neo4j-network.id
   ip_cidr_range = var.subnetwork_range
   region = var.region
   private_ip_google_access = "true"
@@ -23,7 +23,7 @@ Setup Firewall
 */
 resource "google_compute_firewall" "neo4j-access-internal" {
   name    = "neo4j-cluster-access-internal-${var.env}"
-  network = google_compute_network.vpc-custom.id
+  network = google_compute_network.neo4j-network.id
 
   allow {
     protocol = "tcp"
@@ -42,7 +42,7 @@ resource "google_compute_firewall" "neo4j-access-internal" {
 
 resource "google_compute_firewall" "neo4j-access-external" {
   name    = "neo4j-cluster-access-external-${var.env}"
-  network = google_compute_network.vpc-custom.id
+  network = google_compute_network.neo4j-network.id
 
   allow {
     protocol = "tcp"

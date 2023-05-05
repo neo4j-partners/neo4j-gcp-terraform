@@ -95,7 +95,7 @@ variable "graphDataScienceLicenseKey" {
 variable "vpc_name" {
   description = "Name of the VPC being used by this Terraform deployment"
   type        = string
-  default     = "vpc-neo4j"
+  default     = "neo4j-network"
 }
 
 /*
@@ -149,7 +149,7 @@ variable "vm_os_image" {
 variable "neo4j_disk_size" {
   description = "Size of the storage disk used by this Terraform deployment"
   type        = number
-  default     = 40
+  default     = 100
 }
 
 variable "neo4j_disk_type" {

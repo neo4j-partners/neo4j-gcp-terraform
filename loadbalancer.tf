@@ -1,10 +1,10 @@
 # ------------------------------------------------------------------------------
 # CREATE FORWARDING RULE
 # ------------------------------------------------------------------------------
-resource "google_compute_forwarding_rule" "http" {
+resource "google_compute_forwarding_rule" "neo4j-node-forwarding-rule" {
   provider              = google-beta
   project               = var.project
-  name                  = "${var.vpc_name}-http-${var.env}"
+  name                  = "neo4j-node-forwarding-rule-${var.env}"
   region                = var.region
   target                = google_compute_target_pool.neo4j-tp.self_link
   load_balancing_scheme = "EXTERNAL"
@@ -61,7 +61,7 @@ resource "google_compute_firewall" "health_check" {
   provider = google-beta
   project  = var.project
   name     = "health-check-fw-${var.env}"
-  network  = google_compute_network.vpc-custom.id
+  network  = google_compute_network.neo4j-network.id
 
   allow {
     protocol = "tcp"

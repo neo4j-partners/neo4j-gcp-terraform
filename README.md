@@ -13,7 +13,7 @@ We also need to install glcoud.  Instructions for installing the Google Cloud SD
 
 Now, you'll need a copy of this repo.  To make a local copy, run the commands:
 
-    git clone https://github.com/neo4j-field/neo4j-gcp-terraform-thd
+    git clone https://github.com/neo4j-partners/neo4j-gcp-terraform
     cd neo4j-gcp-terraform
     
 To set up your Google environment and log into Google, run the command:

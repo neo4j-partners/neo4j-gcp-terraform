@@ -19,8 +19,8 @@ resource "google_compute_instance" "neo4j-gce" {
   }
   network_interface {
 #    network = "default"
-    network    = google_compute_network.vpc-custom.id
-    subnetwork = google_compute_subnetwork.sub-custom.id
+    network    = google_compute_network.neo4j-network.id
+    subnetwork = google_compute_subnetwork.neo4j-subnetwork.id
 
     access_config {
     }
@@ -52,9 +52,11 @@ resource "google_compute_instance" "neo4j-gce" {
     ignore_changes = [attached_disk]
   }
 
-  metadata_startup_script = templatefile("./scripts/core-5.sh", {
-      "vpc_name"                   = var.vpc_name
-      "deployment"                 = var.env
+  #metadata_startup_script = templatefile("./scripts/core-5.sh", {
+  metadata = {
+    startup-script = templatefile("./scripts/core-5.sh", {
+      "vpc_name"                   = google_compute_network.neo4j-network.name
+      "env"                        = var.env
       "region"                     = var.region
       "graphDatabaseVersion"       = var.neo4j_version
       "adminPassword"              = var.adminPassword
@@ -64,6 +66,7 @@ resource "google_compute_instance" "neo4j-gce" {
       "installBloom"               = var.installBloom
       "bloomLicenseKey"            = var.bloomLicenseKey
     })
+  }
 
   service_account {
     scopes = ["cloud-platform"]
@@ -79,7 +82,7 @@ resource "local_file" "render_setup_template" {
   filename = "./out/rendered_template_${count.index + 1}.sh"
   content = templatefile("./scripts/core-5.sh", {
       "vpc_name"                   = var.vpc_name
-      "deployment"                 = var.env
+      "env"                        = var.env
       "region"                     = var.region
       "graphDatabaseVersion"       = var.neo4j_version
       "adminPassword"              = var.adminPassword
@@ -95,6 +98,7 @@ resource "local_file" "render_setup_template" {
 This block will support the creation of the storage disk for the Neo4j Datastore.
 Note: If disk is resized need to execute the following command 
 inside the VM manually `sudo resize2fs </dev/sda>` 
+*/
 resource "google_compute_disk" "disks" {
   count = var.nodeCount
   name  = "neo4j-disk-${var.env}-${count.index + 1}"
@@ -106,10 +110,11 @@ resource "google_compute_disk" "disks" {
   }
 }
 
+/*
 Attach the disk created above to this VM
+*/
 resource "google_compute_attached_disk" "attach-disks" {
   count    = var.nodeCount
   disk     = google_compute_disk.disks[count.index].id
   instance = google_compute_instance.neo4j-gce[count.index].id
 }
-*/
