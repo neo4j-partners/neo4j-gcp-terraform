@@ -77,14 +77,10 @@ variable "bloomLicenseKey" {
   type        = string
 }
 
-variable "installGraphDataScience" {
-    description = "Install Neo4j GDS"
-    type = string
-    default = "No"
-  validation {
-    condition = var.installGraphDataScience == "No" || var.installGraphDataScience == "Yes"
-    error_message = "Choose Yes or No"
-  }
+variable "gdsNodeCount" {
+  description = "Number of Neo4j GDS nodes to be deployed"
+  type        = number
+  default     = 0
 }
 
 variable "graphDataScienceLicenseKey" {
@@ -135,8 +131,13 @@ variable "vm_name" {
 variable "machine_type" {
   description = "Machine type of the VM being provisioned by this Terraform deployment"
   type        = string
-#  default     = "e2-medium"
   default     = "n1-standard-4"
+}
+
+variable "gds_machine_type" {
+  description = "Machine type of the VM being provisioned by this Terraform deployment"
+  type        = string
+  default     = "m1-ultramem-40"
 }
 
 variable "vm_os_image" {

@@ -1,16 +1,11 @@
 /*
 Setup VM | Public IP | Storage Disk
 */
-locals {
-  # Will be removed in future commits
-  discovery_addresses = join(",", [for num in range(var.nodeCount) : format("%s%s", "http-forwardingrule-${var.env}-${num + 1}", ":5000")])
-}
-
-resource "google_compute_instance" "neo4j-gce" {
-  count        = var.nodeCount
-  name         = "${var.vm_name}-${var.env}-${count.index + 1}"
+resource "google_compute_instance" "neo4j-gds-gce" {
+  count        = var.gdsNodeCount
+  name         = "${var.vm_name}-gds-${var.env}-${count.index + 1}"
   zone         = var.zone
-  machine_type = var.machine_type
+  machine_type = var.gds_machine_type
   tags         = var.firewall_target_tags
 
   labels = {
@@ -59,16 +54,15 @@ resource "google_compute_instance" "neo4j-gce" {
   # Forces instances to be recreated if the script is changed
   metadata_startup_script = templatefile("./scripts/core-5.sh", {
       "network_name"               = google_compute_network.neo4j-network.name
-      #"forwarding-rule-name"       = google_compute_forwarding_rule.neo4j-node-forwarding-rule.name
-      "forwarding-rule-name"       = "neo4j-node-forwarding-rule-${var.env}"
+      "forwarding-rule-name"       = google_compute_forwarding_rule.neo4j-node-forwarding-rule.name
       "env"                        = var.env
       "region"                     = var.region
       "graphDatabaseVersion"       = var.neo4j_version
       "adminPassword"              = var.adminPassword
       "nodeCount"                  = var.nodeCount
       "gdsNodeCount"               = var.gdsNodeCount
-      "installGraphDataScience"    = "No"
-      "graphDataScienceLicenseKey" = ""
+      "installGraphDataScience"    = "Yes"
+      "graphDataScienceLicenseKey" = var.graphDataScienceLicenseKey
       "installBloom"               = var.installBloom
       "bloomLicenseKey"            = var.bloomLicenseKey
     })
@@ -79,37 +73,14 @@ resource "google_compute_instance" "neo4j-gce" {
   depends_on = [local_file.render_setup_template]
 }
 
-/*
-Setup template renderer for validation of VM setup script
-*/
-resource "local_file" "render_setup_template" {
-  count    = var.nodeCount
-  filename = "./out/rendered_template_${count.index + 1}.sh"
-  content = templatefile("./scripts/core-5.sh", {
-      "network_name"               = google_compute_network.neo4j-network.name
-      #"forwarding-rule-name"       = google_compute_forwarding_rule.neo4j-node-forwarding-rule.name
-      "forwarding-rule-name"       = "neo4j-node-forwarding-rule-${var.env}"
-      "env"                        = var.env
-      "region"                     = var.region
-      "graphDatabaseVersion"       = var.neo4j_version
-      "adminPassword"              = var.adminPassword
-      "nodeCount"                  = var.nodeCount
-      "gdsNodeCount"               = var.gdsNodeCount
-      "installGraphDataScience"    = "No"
-      "graphDataScienceLicenseKey" = ""
-      "installBloom"               = var.installBloom
-      "bloomLicenseKey"            = var.bloomLicenseKey
-  })
-}
-
 /* 
 This block will support the creation of the storage disk for the Neo4j Datastore.
 Note: If disk is resized need to execute the following command 
 inside the VM manually `sudo resize2fs </dev/sda>` 
 */
-resource "google_compute_disk" "disks" {
-  count = var.nodeCount
-  name  = "neo4j-disk-${var.env}-${count.index + 1}"
+resource "google_compute_disk" "gds-disks" {
+  count = var.gdsNodeCount
+  name  = "neo4j-disk-${var.env}-gds-${count.index + 1}"
   size  = var.neo4j_disk_size
   type  = var.neo4j_disk_type
   zone  = var.zone
@@ -121,8 +92,8 @@ resource "google_compute_disk" "disks" {
 /*
 Attach the disk created above to this VM
 */
-resource "google_compute_attached_disk" "attach-disks" {
-  count    = var.nodeCount
-  disk     = google_compute_disk.disks[count.index].id
-  instance = google_compute_instance.neo4j-gce[count.index].id
+resource "google_compute_attached_disk" "attach-gds-disk" {
+  count    = var.gdsNodeCount
+  disk     = google_compute_disk.gds-disks[count.index].id
+  instance = google_compute_instance.neo4j-gds-gce[count.index].id
 }

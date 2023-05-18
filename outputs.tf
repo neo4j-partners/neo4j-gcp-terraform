@@ -23,6 +23,25 @@ output "neo4j_bolt_url" {
   value = "bolt://${google_compute_forwarding_rule.neo4j-node-forwarding-rule.ip_address}:7687"
 }
 
+output "neo4j_gds_browser_url" {
+  description = "Neo4j GDS Browser URL"
+  value = [
+    for key, value in google_compute_forwarding_rule.neo4j-gds-node-forwarding-rule[*].ip_address : "http://${value}:7474"
+  ]
+
+  depends_on = [
+    google_compute_forwarding_rule.neo4j-gds-node-forwarding-rule,
+    google_compute_instance.neo4j-gds-gce,
+  ]
+}
+
+output "neo4j_gds_bloom_url" {
+  description = "Neo4j GDS Bloom URL"
+  value = [
+    for key, value in google_compute_forwarding_rule.neo4j-gds-node-forwarding-rule[*].ip_address : "http://${value}:7474/bloom"
+  ]
+}
+
 output "neo4j_password" {
   description = "Neo4j admin password"
   value = var.adminPassword
@@ -32,9 +51,8 @@ output "node_count" {
   value = var.nodeCount
 }
 
-output "gds_installed" {
-  description = "Install GDS"
-  value = var.installGraphDataScience
+output "gds_node_count" {
+  value = var.gdsNodeCount
 }
 
 output "bloom_installed" {

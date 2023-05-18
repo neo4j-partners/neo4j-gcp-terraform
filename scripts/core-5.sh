@@ -4,9 +4,11 @@ echo "Running core-5.sh"
 
 echo "Using the settings:"
 echo env '${env}'
+echo forwarding-rule-name '${forwarding-rule-name}'
 echo region '${region}'
 echo adminPassword '${adminPassword}'
 echo nodeCount '${nodeCount}'
+echo gdsNodeCount '${gdsNodeCount}'
 echo installGraphDataScience '${installGraphDataScience}'
 echo graphDataScienceLicenseKey '${graphDataScienceLicenseKey}'
 echo installBloom '${installBloom}'
@@ -29,6 +31,10 @@ configure_firewalld() {
 }
 
 mount_data_disk() {
+  #
+  # For production systems, consider pre-allocating and formatting disks and only mount
+  # within this startup script
+  #
   echo "Format and mount the data disk to /var/lib/neo4j"
   local -r MOUNT_POINT="/var/lib/neo4j"
 
@@ -67,11 +73,11 @@ install_neo4j_from_yum() {
     yum -y install jq
 
     echo Resolving latest Neo4j 5 release
-    if ! curl --fail http://versions.neo4j-templates.com/target.json; then
+    if ! curl --fail http://versions.neo4j-templates.com; then
         echo "Failed to resolve Neo4j version from http://versions.neo4j-templates.com, using latest"
         local -r graphDatabaseVersion="neo4j-enterprise"
     else
-        local -r graphDatabaseVersion="neo4j-enterprise-$(curl http://versions.neo4j-templates.com/target.json | jq -r '.gcp."5"')"
+        local -r graphDatabaseVersion="neo4j-enterprise-$(curl http://versions.neo4j-templates.com | jq -r '.gcp."5"')"
     fi
 
     echo Adding neo4j yum repo...
@@ -91,22 +97,21 @@ EOF
 }
 install_apoc_plugin() {
     echo "Installing APOC..."
-    mv /var/lib/neo4j/labs/apoc-*-core.jar /var/lib/neo4j/plugins
+    cp /var/lib/neo4j/labs/apoc-*-core.jar /var/lib/neo4j/plugins
 }
 configure_graph_data_science() {
-    if [[ "${installGraphDataScience}" == 'Yes' && "${graphDataScienceLicenseKey}" != 'None' ]]; then
-        if [[ ${nodeCount} == 1 ]]; then
-           echo "Installing Graph Data Science..."
-           cp -p /var/lib/neo4j/products/neo4j-graph-data-science-*.jar /var/lib/neo4j/plugins
+    if [[ "${installGraphDataScience}" == "Yes" && "${graphDataScienceLicenseKey}" != "None" ]]; then
+        echo "Installing Graph Data Science..."
+        cp -p /var/lib/neo4j/products/neo4j-graph-data-science-*.jar /var/lib/neo4j/plugins
 
-           echo "Writing GDS license key..."
-           mkdir -p /etc/neo4j/licenses
-           chown neo4j:neo4j /etc/neo4j/licenses
-           echo "${graphDataScienceLicenseKey}" >/etc/neo4j/licenses/neo4j-gds.license
-           sed -i '$a gds.enterprise.license_file=/etc/neo4j/licenses/neo4j-gds.license' /etc/neo4j/neo4j.conf
-        else
-            echo "GDS can only be installed on a single node."
-        fi
+        echo "Writing GDS license key..."
+        mkdir -p /etc/neo4j/licenses
+        chown neo4j:neo4j /etc/neo4j/licenses
+        echo "${graphDataScienceLicenseKey}" >/etc/neo4j/licenses/neo4j-gds.license
+        sed -i '$a gds.enterprise.license_file=/etc/neo4j/licenses/neo4j-gds.license' /etc/neo4j/neo4j.conf
+    
+        echo "initial.server.mode_constraint: SECONDARY" >>/etc/neo4j/neo4j.conf
+        echo "server.cluster.system_database_mode: SECONDARY" >>/etc/neo4j/neo4j.conf
     fi
 }
 configure_bloom() {
@@ -142,12 +147,19 @@ build_neo4j_conf_file() {
     sed -i s/#server.cluster.raft.listen_address=:7000/server.cluster.raft.listen_address="$${privateIP}":7000/g /etc/neo4j/neo4j.conf
     sed -i s/#server.bolt.listen_address=:7687/server.bolt.listen_address=0.0.0.0:7687/g /etc/neo4j/neo4j.conf
     sed -i s/#server.bolt.advertised_address=:7687/server.bolt.advertised_address="$${privateIP}":7687/g /etc/neo4j/neo4j.conf
+
+    # Consider changing to specify heap and pagecache
     neo4j-admin server memory-recommendation >>/etc/neo4j/neo4j.conf
-    echo "server.metrics.enabled=true" >>/etc/neo4j/neo4j.conf
-    echo "server.metrics.jmx.enabled=true" >>/etc/neo4j/neo4j.conf
-    echo "server.metrics.prefix=neo4j" >>/etc/neo4j/neo4j.conf
-    echo "server.metrics.filter=*" >>/etc/neo4j/neo4j.conf
-    echo "server.metrics.csv.interval=5s" >>/etc/neo4j/neo4j.conf
+    #echo "server.memory.heap.initial_size=100G" >>/etc/neo4j/neo4j.conf
+    #echo "server.memory.heap.max_size=100G" >>/etc/neo4j/neo4j.conf
+    #echo "server.memory.pagecache.size=150G" >>/etc/neo4j/neo4j.conf
+
+
+    #echo "server.metrics.enabled=true" >>/etc/neo4j/neo4j.conf
+    #echo "server.metrics.jmx.enabled=true" >>/etc/neo4j/neo4j.conf
+    #echo "server.metrics.prefix=neo4j" >>/etc/neo4j/neo4j.conf
+    #echo "server.metrics.filter=*" >>/etc/neo4j/neo4j.conf
+    #echo "server.metrics.csv.interval=5s" >>/etc/neo4j/neo4j.conf
     echo "dbms.routing.default_router=SERVER" >>/etc/neo4j/neo4j.conf
 
     #this is to prevent SSRF attacks
@@ -161,12 +173,12 @@ build_neo4j_conf_file() {
 
     else
         echo "Running on multiple nodes.  Configuring membership in neo4j.conf..."
-        local -r httpIP=$(gcloud compute forwarding-rules describe "neo4j-node-forwarding-rule-${env}" --format="value(IPAddress)" --region ${region})
+        local -r httpIP=$(gcloud compute forwarding-rules describe "${forwarding-rule-name}" --format="value(IPAddress)" --region ${region})
         sed -i s/#server.default_advertised_address=localhost/server.default_advertised_address="$${httpIP}"/g /etc/neo4j/neo4j.conf
         sed -i s/#initial.dbms.default_primaries_count=1/initial.dbms.default_primaries_count=3/g /etc/neo4j/neo4j.conf
-        sed -i s/#initial.dbms.default_secondaries_count=0/initial.dbms.default_secondaries_count="$(expr ${nodeCount} - 3)"/g /etc/neo4j/neo4j.conf
+        sed -i s/#initial.dbms.default_secondaries_count=0/initial.dbms.default_secondaries_count="$(expr ${nodeCount} + ${gdsNodeCount} - 3)"/g /etc/neo4j/neo4j.conf
         sed -i s/#server.bolt.listen_address=:7687/server.bolt.listen_address="$${privateIP}":7687/g /etc/neo4j/neo4j.conf
-        echo "dbms.cluster.minimum_initial_system_primaries_count=${nodeCount}" >>/etc/neo4j/neo4j.conf
+        echo "dbms.cluster.minimum_initial_system_primaries_count=3" >>/etc/neo4j/neo4j.conf
         local clusterMembers
         for ip in $(gcloud compute instances list --format "value(networkInterfaces[0].networkIP.list())" --filter "labels.env: ${env}"); do
             local member="$${ip}:5000"
@@ -184,6 +196,25 @@ start_neo4j() {
         sleep 10
     done
 }
+enableSecondaryServers() {
+    # Need to wait for cluster to come up before executing
+    sleep 0.05m
+
+    # Enable server needs to be executed on primary nodes
+    if [[ "${installGraphDataScience}" == "No" ]]; then
+        local -r freeServers=$(cypher-shell -u neo4j -p '${adminPassword}' -a 'bolt://0.0.0.0:7687' -d system 'show servers' | grep 'Free' | awk -F , '{print $1}')
+        echo "Free servers $${freeServers}"
+
+        # Need to modify to iterate when more than 1 free server
+        if [[ -n "$${freeServers}" ]]; then
+           echo "Enabling free server $${freeServers}"
+           cypher-shell -u neo4j -p foobar123 -a 'bolt://0.0.0.0:7687' -d system "enable server $${freeServers}"
+        fi
+
+        cypher-shell -u neo4j -p foobar123 -a 'bolt://0.0.0.0:7687' -d system \
+           "alter database neo4j SET TOPOLOGY ${nodeCount} Primaries ${gdsNodeCount} Secondary"
+    fi
+}
 
 mount_data_disk
 configure_firewalld
@@ -194,3 +225,4 @@ build_neo4j_conf_file
 configure_graph_data_science
 configure_bloom
 start_neo4j
+enableSecondaryServers

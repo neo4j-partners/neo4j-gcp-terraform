@@ -4,6 +4,7 @@
 resource "google_compute_forwarding_rule" "neo4j-node-forwarding-rule" {
   provider              = google-beta
   project               = var.project
+  # If you change the name, also change in the main.tf startup script
   name                  = "neo4j-node-forwarding-rule-${var.env}"
   region                = var.region
   target                = google_compute_target_pool.neo4j-tp.self_link
@@ -28,6 +29,7 @@ resource "google_compute_target_pool" "neo4j-tp" {
   region           = var.region
   session_affinity = "NONE"
 
+  # Instances only include Primary (non-GDS) nodes
   instances = google_compute_instance.neo4j-gce.*.self_link
 
   health_checks = google_compute_http_health_check.neo4j-http-health-check.*.name
