@@ -197,21 +197,21 @@ start_neo4j() {
     done
 }
 enableSecondaryServers() {
-    # Need to wait for cluster to come up before executing
-    sleep 0.05m
-
     # Enable server needs to be executed on primary nodes
     if [[ "${installGraphDataScience}" == "No" ]]; then
+        # Need to wait for cluster to come up before executing
+        sleep 5m
+
         local -r freeServers=$(cypher-shell -u neo4j -p '${adminPassword}' -a 'bolt://0.0.0.0:7687' -d system 'show servers' | grep 'Free' | awk -F , '{print $1}')
         echo "Free servers $${freeServers}"
 
         # Need to modify to iterate when more than 1 free server
         if [[ -n "$${freeServers}" ]]; then
            echo "Enabling free server $${freeServers}"
-           cypher-shell -u neo4j -p foobar123 -a 'bolt://0.0.0.0:7687' -d system "enable server $${freeServers}"
+           cypher-shell -u neo4j -p '${adminPassword}' -a 'bolt://0.0.0.0:7687' -d system "enable server $${freeServers}"
         fi
 
-        cypher-shell -u neo4j -p foobar123 -a 'bolt://0.0.0.0:7687' -d system \
+        cypher-shell -u neo4j -p '${adminPassword}' -a 'bolt://0.0.0.0:7687' -d system \
            "alter database neo4j SET TOPOLOGY ${nodeCount} Primaries ${gdsNodeCount} Secondary"
     fi
 }
