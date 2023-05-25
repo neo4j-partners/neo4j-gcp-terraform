@@ -200,7 +200,7 @@ enableSecondaryServers() {
     # Enable server needs to be executed on primary nodes
     if [[ "${installGraphDataScience}" == "No" ]]; then
         # Need to wait for cluster to come up before executing
-        sleep 5m
+        sleep 3m
 
         local -r freeServers=$(cypher-shell -u neo4j -p '${adminPassword}' -a 'bolt://0.0.0.0:7687' -d system 'show servers' | grep 'Free' | awk -F , '{print $1}')
         echo "Free servers $${freeServers}"
