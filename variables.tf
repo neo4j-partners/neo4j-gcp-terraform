@@ -113,7 +113,7 @@ variable "subnetwork_range" {
 variable "neo4j_access_internal_ports" {
   description = "Internal access firewall rule ports used by this Terraform deployment"
   type        = list(string)
-  default     = ["5000", "6000", "7000", "7687"]
+  default     = ["5000", "6000", "7000", "7687", "7688"]
 }
 
 variable "neo4j_access_external_ports" {
