@@ -51,19 +51,18 @@ resource "google_compute_instance" "neo4j-gce" {
     ignore_changes = [attached_disk]
   }
 
-  /*
-  metadata = {
-    startup-script = templatefile("./scripts/core-5.sh",
+ /*
+ provisioner "file" {
+    source      = "./scripts/core-5.sh"
+    destination = "/tmp/core-5.sh"
+  }
   */
 
-  # Forces instances to be recreated if the script is changed
   metadata_startup_script = templatefile("./scripts/core-5.sh", {
-      "network_name"               = google_compute_network.neo4j-network.name
       #"forwarding-rule-name"       = google_compute_forwarding_rule.neo4j-node-forwarding-rule.name
-      "forwarding-rule-name"       = "neo4j-node-forwarding-rule-${var.env}"
+      "forwarding_rule_name"       = "neo4j-node-forwarding-rule-${var.env}"
       "env"                        = var.env
       "region"                     = var.region
-      "graphDatabaseVersion"       = var.neo4j_version
       "adminPassword"              = var.adminPassword
       "nodeCount"                  = var.nodeCount
       "gdsNodeCount"               = var.gdsNodeCount
@@ -76,12 +75,11 @@ resource "google_compute_instance" "neo4j-gce" {
   service_account {
     scopes = ["cloud-platform"]
   }
-  depends_on = [local_file.render_setup_template]
+#  depends_on = [local_file.render_setup_template]
 }
 
 /*
 Setup template renderer for validation of VM setup script
-*/
 resource "local_file" "render_setup_template" {
   count    = var.nodeCount
   filename = "./out/rendered_template_${count.index + 1}.sh"
@@ -101,6 +99,7 @@ resource "local_file" "render_setup_template" {
       "bloomLicenseKey"            = var.bloomLicenseKey
   })
 }
+*/
 
 /* 
 This block will support the creation of the storage disk for the Neo4j Datastore.

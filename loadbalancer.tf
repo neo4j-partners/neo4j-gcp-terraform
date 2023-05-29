@@ -43,7 +43,7 @@ resource "google_compute_http_health_check" "neo4j-http-health-check" {
 
   provider            = google-beta
   project             = var.project
-  name                = "http-healthcheck-${var.env}"
+  name                = "neo4j-http-healthcheck-${var.env}"
 #  request_path        = "/browser"
   request_path        = "/"
   port                = 7474

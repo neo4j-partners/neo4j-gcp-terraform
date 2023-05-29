@@ -47,17 +47,16 @@ resource "google_compute_instance" "neo4j-gds-gce" {
   }
 
   /*
-  metadata = {
-    startup-script = templatefile("./scripts/core-5.sh",
+  provisioner "file" {
+    source      = "./scripts/core-5.sh"
+    destination = "/tmp/core-5.sh"
+  }
   */
 
-  # Forces instances to be recreated if the script is changed
   metadata_startup_script = templatefile("./scripts/core-5.sh", {
-      "network_name"               = google_compute_network.neo4j-network.name
-      "forwarding-rule-name"       = google_compute_forwarding_rule.neo4j-node-forwarding-rule.name
+      "forwarding_rule_name"       = google_compute_forwarding_rule.neo4j-node-forwarding-rule.name
       "env"                        = var.env
       "region"                     = var.region
-      "graphDatabaseVersion"       = var.neo4j_version
       "adminPassword"              = var.adminPassword
       "nodeCount"                  = var.nodeCount
       "gdsNodeCount"               = var.gdsNodeCount
@@ -70,7 +69,6 @@ resource "google_compute_instance" "neo4j-gds-gce" {
   service_account {
     scopes = ["cloud-platform"]
   }
-  depends_on = [local_file.render_setup_template]
 }
 
 /* 
