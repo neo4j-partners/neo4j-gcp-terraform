@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# This script is used as a terraform template file. Variables with ${..} will be
-# replaced with the value defined in the TF file. Variables with $${..} will be
+# This script is used as a terraform template file. Variables with {} (preceding $) will be
+# replaced with the value defined in the TF file. Variables with 2 $ and {} will be
 # ignored by terraform.
 
 set -e
@@ -113,7 +113,7 @@ EOF
 }
 install_apoc_plugin() {
     echo "Installing APOC..."
-    cp /var/lib/neo4j/labs/apoc-*-core.jar /var/lib/neo4j/plugins
+    cp -p /var/lib/neo4j/labs/apoc-*-core.jar /var/lib/neo4j/plugins
 }
 configure_graph_data_science() {
     if [[ "$installGraphDataScience" == "Yes" && "$graphDataScienceLicenseKey" != "None" ]]; then
@@ -157,12 +157,13 @@ build_neo4j_conf_file() {
     sed -i s/#server.cluster.advertised_address=:6000/server.cluster.advertised_address="$privateIP":6000/g /etc/neo4j/neo4j.conf
     sed -i s/#server.cluster.raft.advertised_address=:7000/server.cluster.raft.advertised_address="$privateIP":7000/g /etc/neo4j/neo4j.conf
     sed -i s/#server.routing.advertised_address=:7688/server.routing.advertised_address="$privateIP":7688/g /etc/neo4j/neo4j.conf
-    sed -i s/#server.discovery.listen_address=:5000/server.discovery.listen_address="$privateIP":5000/g /etc/neo4j/neo4j.conf
-    sed -i s/#server.routing.listen_address=0.0.0.0:7688/server.routing.listen_address="$privateIP":7688/g /etc/neo4j/neo4j.conf
-    sed -i s/#server.cluster.listen_address=:6000/server.cluster.listen_address="$privateIP":6000/g /etc/neo4j/neo4j.conf
-    sed -i s/#server.cluster.raft.listen_address=:7000/server.cluster.raft.listen_address="$privateIP":7000/g /etc/neo4j/neo4j.conf
-    sed -i s/#server.bolt.listen_address=:7687/server.bolt.listen_address=0.0.0.0:7687/g /etc/neo4j/neo4j.conf
-    sed -i s/#server.bolt.advertised_address=:7687/server.bolt.advertised_address="$privateIP":7687/g /etc/neo4j/neo4j.conf
+
+    # listen address to just be port - no IP
+    sed -i s/#server.discovery.listen_address=:5000/server.discovery.listen_address=:5000/g /etc/neo4j/neo4j.conf
+    sed -i s/#server.routing.listen_address=0.0.0.0:7688/server.routing.listen_address=:7688/g /etc/neo4j/neo4j.conf
+    sed -i s/#server.cluster.listen_address=:6000/server.cluster.listen_address=:6000/g /etc/neo4j/neo4j.conf
+    sed -i s/#server.cluster.raft.listen_address=:7000/server.cluster.raft.listen_address=:7000/g /etc/neo4j/neo4j.conf
+    sed -i s/#server.bolt.listen_address=:7687/server.bolt.listen_address=:7687/g /etc/neo4j/neo4j.conf
 
     # Consider changing to specify heap and pagecache
     neo4j-admin server memory-recommendation >>/etc/neo4j/neo4j.conf
@@ -185,12 +186,21 @@ build_neo4j_conf_file() {
 
     if [[ $nodeCount == 1 ]]; then
         echo "Running on a single node."
-        sed -i s/#server.default_advertised_address=localhost/server.default_advertised_address="$nodeExternalIP"/g /etc/neo4j/neo4j.conf
+        # Keep commented - use bolt advertised address
+        #sed -i s/#server.default_advertised_address=localhost/server.default_advertised_address="$nodeExternalIP"/g /etc/neo4j/neo4j.conf
 
+        # address to external LB IP
+        sed -i s/#server.bolt.advertised_address=:7687/server.bolt.advertised_address="$nodeExternalIP":7687/g /etc/neo4j/neo4j.conf
     else
         echo "Running on multiple nodes.  Configuring membership in neo4j.conf..."
         local -r httpIP=$(gcloud compute forwarding-rules describe "$forwarding_rule_name" --format="value(IPAddress)" --region $region)
-        sed -i s/#server.default_advertised_address=localhost/server.default_advertised_address="$httpIP"/g /etc/neo4j/neo4j.conf
+        
+        # Keep commented - use bolt advertised address
+        #sed -i s/#server.default_advertised_address=localhost/server.default_advertised_address="$httpIP"/g /etc/neo4j/neo4j.conf
+
+        # address to external LB IP
+        sed -i s/#server.bolt.advertised_address=:7687/server.bolt.advertised_address="$httpIP":7687/g /etc/neo4j/neo4j.conf
+
         sed -i s/#initial.dbms.default_primaries_count=1/initial.dbms.default_primaries_count=3/g /etc/neo4j/neo4j.conf
         sed -i s/#initial.dbms.default_secondaries_count=0/initial.dbms.default_secondaries_count="$(expr $nodeCount + $gdsNodeCount - 3)"/g /etc/neo4j/neo4j.conf
         sed -i s/#server.bolt.listen_address=:7687/server.bolt.listen_address="$privateIP":7687/g /etc/neo4j/neo4j.conf
