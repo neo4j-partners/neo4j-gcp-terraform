@@ -1,4 +1,4 @@
-# Neo4j Deployment using Terraform (GCP)
+# neo4j-gcp-terraform
 This repo provides [Terraform](https://www.terraform.io/) templates to support deployment of Neo4j Graph Data Platform in some of the major Cloud Service Providers.
 
 ## **Prerequisites**
