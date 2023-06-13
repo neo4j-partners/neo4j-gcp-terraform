@@ -99,4 +99,8 @@ terraform apply
 
 ```
 terraform destroy
+<<<<<<< HEAD
 ```
+=======
+```
+>>>>>>> 0a1785a (rebase)
