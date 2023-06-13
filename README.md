@@ -99,8 +99,8 @@ terraform apply
 
 ```
 terraform destroy
-<<<<<<< HEAD
 ```
-=======
-```
->>>>>>> 0a1785a (rebase)
+
+## **Sample Deployment Architecture**
+
+![My Image](images/Neo4j_v5_Cluster.jpg)
