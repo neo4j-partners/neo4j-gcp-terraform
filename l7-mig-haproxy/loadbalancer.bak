@@ -1,0 +1,88 @@
+# ------------------------------------------------------------------------------
+# CREATE FORWARDING RULE
+# ------------------------------------------------------------------------------
+resource "google_compute_forwarding_rule" "neo4j-forwarding-rule" {
+  provider              = google-beta
+  project               = var.project
+  # If you change the name, also change in the main.tf startup script
+  name                  = "neo4j-lb-${var.env}"
+  region                = var.region
+  load_balancing_scheme = "EXTERNAL"
+  backend_service       = google_compute_region_backend_service.neo4j-lb-backend-service.id
+  #target                = google_compute_target_pool.neo4j-tp.self_link
+  all_ports             = true
+  ip_protocol           = "TCP"
+
+  labels = {
+    "env"   = var.env
+    "group" = var.labels_group
+  }
+}
+
+# Backend service for MIG
+resource "google_compute_region_backend_service" "neo4j-lb-backend-service" {
+  name                  = "neo4j-lb-backend-service-${var.env}"
+  project               = var.project
+  provider              = google-beta
+  region                = var.region
+  protocol              = "TCP"
+  load_balancing_scheme = "EXTERNAL"
+  health_checks         = [google_compute_region_health_check.neo4j-lb-hc.id]
+
+  backend {
+    group           = google_compute_region_instance_group_manager.neo4j-lb-region-mig.instance_group
+    balancing_mode  = "CONNECTION"
+  }
+}
+
+# MIG for Internal TCP/UDP Load Balancer
+resource "google_compute_region_instance_group_manager" "neo4j-lb-region-mig" {
+  project               = var.project
+  name                  = "neo4j-lb-region-mig-${var.env}"
+  base_instance_name    = "neo4j-lb-node-${var.env}"
+  description           = "MIG for Neo4j nodes"
+  region                = var.region
+  target_size           = var.nodeCount
+
+  version {
+    name              = "primary-neo4j-node-${var.env}"
+    instance_template = google_compute_instance_template.neo4j-node-instance-template.id
+  }
+
+  stateful_disk {
+    device_name = google_compute_instance_template.neo4j-node-instance-template.disk[1].device_name
+    delete_rule = "ON_PERMANENT_INSTANCE_DELETION"
+  }
+
+  update_policy {
+    type                           = "PROACTIVE"
+    instance_redistribution_type   = "NONE"
+    minimal_action                 = "RESTART"
+    max_surge_percent              = 0
+    max_unavailable_fixed          = 3
+    replacement_method             = "RECREATE"
+  }
+  depends_on = [
+    google_compute_firewall.neo4j-neo4j-fw-allow-external,
+    google_compute_firewall.neo4j-fw-allow-internal,
+    google_compute_firewall.neo4j-fw-allow-hc,
+    google_compute_firewall.neo4j-allow_egress,
+    google_compute_firewall.neo4j-fw-allow-ssh
+  ]
+}
+
+# Health check for MIG
+resource "google_compute_region_health_check" "neo4j-lb-hc" {
+  name                = "neo4j-lb-hc-${var.env}"
+  project             = var.project
+  region              = var.region
+  check_interval_sec  = 30
+  healthy_threshold   = 2
+  unhealthy_threshold = 2
+  timeout_sec         = 10
+
+  http_health_check {
+    request_path        = "/"
+    port                = 7474
+  }
+}
