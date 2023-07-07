@@ -165,6 +165,8 @@ build_neo4j_conf_file() {
     sed -i s/#server.cluster.raft.listen_address=:7000/server.cluster.raft.listen_address=:7000/g /etc/neo4j/neo4j.conf
     sed -i s/#server.bolt.listen_address=:7687/server.bolt.listen_address=:7687/g /etc/neo4j/neo4j.conf
 
+    sed -i 's/#db.tx_log.rotation.retention_policy=2 days/db.tx_log.rotation.retention_policy=1 hours/g' /etc/neo4j/neo4j.conf
+
     # Consider changing to specify heap and pagecache
     neo4j-admin server memory-recommendation >>/etc/neo4j/neo4j.conf
     #echo "server.memory.heap.initial_size=100G" >>/etc/neo4j/neo4j.conf
