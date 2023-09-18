@@ -4,7 +4,6 @@ keys/**
 **/keys/**
 terraform.tfvars
 out/**
-terraform*
 .terraform**
 .terraform/**
-terraform.tfstate
+terraform.tfstate*

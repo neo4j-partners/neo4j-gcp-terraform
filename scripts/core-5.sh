@@ -51,6 +51,10 @@ mount_data_disk() {
   # For production systems, consider pre-allocating and formatting disks and only mount
   # within this startup script
   #
+  # Also for production, separate data and transaction logs directories specified in neo4j.conf
+  # server.directories.data
+  # server.directories.transaction.logs.root
+
   echo "Format and mount the data disk to /var/lib/neo4j"
   local -r MOUNT_POINT="/var/lib/neo4j"
 
@@ -151,6 +155,11 @@ extension_config() {
 }
 build_neo4j_conf_file() {
     local -r privateIP="$(hostname -i | awk '{print $NF}')"
+
+    # Also for production, separate data and transaction logs directories specified in neo4j.conf
+    #   server.directories.data = /var/lib/neo4j/data (default)
+    #   server.directories.transaction.logs.root = /var/lib/neo4j/data/transactions (default)
+
     echo "Configuring network in neo4j.conf..."
     sed -i 's/#server.default_listen_address=0.0.0.0/server.default_listen_address=0.0.0.0/g' /etc/neo4j/neo4j.conf
     sed -i s/#server.discovery.advertised_address=:5000/server.discovery.advertised_address="$privateIP":5000/g /etc/neo4j/neo4j.conf
@@ -226,7 +235,7 @@ start_neo4j() {
 }
 enableSecondaryServers() {
     # Enable server needs to be executed on primary nodes
-    if [[ "$installGraphDataScience" == "No" ]]; then
+    if [[ "$installGraphDataScience" == "Yes" ]]; then
         # Need to wait for cluster to come up before executing
         echo "Enabling secondary servers - waiting for cluster to discover and form"
         sleep 0.5m
