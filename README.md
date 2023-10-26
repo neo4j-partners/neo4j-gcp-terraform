@@ -1,6 +1,11 @@
 # neo4j-gcp-terraform
 This repo provides [Terraform](https://www.terraform.io/) templates to support deployment of Neo4j Graph Data Platform in some of the major Cloud Service Providers.
 
+Several example configurations exist.
+- The root folder uses a GCP target pool to create the instances used to form the cluster.
+- The managed-instance-group folder uses a GCP managed instance group to create and manage the instances used to form the cluster.
+- The l7-mig-haproxy folder uses a GCP managed instance group and another instance where HAProxy is installed and configured to use port 80 from the browser UI for both HTTP and BOLT
+
 ## **Prerequisites**
 
 ### Terraform

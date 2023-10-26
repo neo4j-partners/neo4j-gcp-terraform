@@ -93,7 +93,7 @@ install_neo4j_from_yum() {
     sed -i '/\[rhui-rhel-8-for-x86_64-supplementary-rhui-source-rpms\]/,/^ *\[/ s/enabled=1/enabled=0/' /etc/yum.repos.d/rh-cloud.repo
 
     echo Installing jq
-    yum -y install jq wget telnet haproxy
+    yum -y install jq wget telnet haproxy nc
 
     echo Resolving latest Neo4j 5 release
     if ! curl --fail http://versions.neo4j-templates.com; then

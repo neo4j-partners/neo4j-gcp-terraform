@@ -10,6 +10,7 @@ echo "Running core-5.sh"
 export env=${env}
 export forwarding_rule_name=${forwarding_rule_name}
 export region=${region}
+export zone=${zone}
 export adminPassword=${adminPassword}
 export nodeCount=${nodeCount}
 export gdsNodeCount=${gdsNodeCount}
@@ -90,7 +91,7 @@ install_neo4j_from_yum() {
     sed -i '/\[rhui-rhel-8-for-x86_64-supplementary-rhui-source-rpms\]/,/^ *\[/ s/enabled=1/enabled=0/' /etc/yum.repos.d/rh-cloud.repo
 
     echo Installing jq
-    yum -y install jq
+    yum -y install jq wget telnet nc haproxy
 
     echo Resolving latest Neo4j 5 release
     if ! curl --fail http://versions.neo4j-templates.com; then
@@ -114,6 +115,7 @@ EOF
     export NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
     yum -y install "$graphDatabaseVersion"
     systemctl enable neo4j
+    cp /etc/neo4j/neo4j.conf /etc/neo4j/neo4j.org
 }
 install_apoc_plugin() {
     echo "Installing APOC..."
@@ -169,7 +171,7 @@ build_neo4j_conf_file() {
 
     # listen address to just be port - no IP
     sed -i s/#server.discovery.listen_address=:5000/server.discovery.listen_address=:5000/g /etc/neo4j/neo4j.conf
-    sed -i s/#server.routing.listen_address=0.0.0.0:7688/server.routing.listen_address=:7688/g /etc/neo4j/neo4j.conf
+    sed -i s/#server.routing.listen_address=:7688/server.routing.listen_address=:7688/g /etc/neo4j/neo4j.conf
     sed -i s/#server.cluster.listen_address=:6000/server.cluster.listen_address=:6000/g /etc/neo4j/neo4j.conf
     sed -i s/#server.cluster.raft.listen_address=:7000/server.cluster.raft.listen_address=:7000/g /etc/neo4j/neo4j.conf
     sed -i s/#server.bolt.listen_address=:7687/server.bolt.listen_address=:7687/g /etc/neo4j/neo4j.conf
@@ -194,7 +196,6 @@ build_neo4j_conf_file() {
     #Read more here https://neo4j.com/developer/kb/protecting-against-ssrf/
     echo "internal.dbms.cypher_ip_blocklist=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.169.0/24,fc00::/7,fe80::/10,ff00::/8" >> /etc/neo4j/neo4j.conf
 
-
     if [[ $nodeCount == 1 ]]; then
         echo "Running on a single node."
         # Keep commented - use bolt advertised address
@@ -204,13 +205,28 @@ build_neo4j_conf_file() {
         sed -i s/#server.bolt.advertised_address=:7687/server.bolt.advertised_address="$nodeExternalIP":7687/g /etc/neo4j/neo4j.conf
     else
         echo "Running on multiple nodes.  Configuring membership in neo4j.conf..."
-        local -r httpIP=$(gcloud compute forwarding-rules describe "$forwarding_rule_name" --format="value(IPAddress)" --region $region)
-        
+        if [ ! -z "$forwarding_rule_name" ]; then
+           bolt_port=7687
+           httpIP=$(gcloud compute forwarding-rules describe "$forwarding_rule_name" --format="value(IPAddress)" --region $region)
+
+           if [ -z "$httpIP" ]; then
+              httpIP=$(gcloud compute forwarding-rules describe "$forwarding_rule_name" --format="value(IPAddress)" --global)
+              bolt_port=80
+           fi
+        fi
+
+        # Get HAproxy external IP
+        if [ -z "$httpIP" ]; then
+           httpIP=$(gcloud compute instances describe "neo4j-haproxy-$env" --zone $zone | awk '/natIP/ {print $2}')
+           bolt_port=80
+        fi
+
         # Keep commented - use bolt advertised address
         #sed -i s/#server.default_advertised_address=localhost/server.default_advertised_address="$httpIP"/g /etc/neo4j/neo4j.conf
 
         # address to external LB IP
-        sed -i s/#server.bolt.advertised_address=:7687/server.bolt.advertised_address="$httpIP":7687/g /etc/neo4j/neo4j.conf
+        sed -i s/#server.bolt.advertised_address=:7687/server.bolt.advertised_address="$httpIP":"$bolt_port"/g /etc/neo4j/neo4j.conf
+        sed -i s/#dbms.routing.enabled=false/dbms.routing.enabled=true/g /etc/neo4j/neo4j.conf
 
         sed -i s/#initial.dbms.default_primaries_count=1/initial.dbms.default_primaries_count=3/g /etc/neo4j/neo4j.conf
         sed -i s/#initial.dbms.default_secondaries_count=0/initial.dbms.default_secondaries_count="$(expr $nodeCount + $gdsNodeCount - 3)"/g /etc/neo4j/neo4j.conf

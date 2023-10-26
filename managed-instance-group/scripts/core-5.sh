@@ -45,14 +45,12 @@ configure_firewalld() {
     firewall-cmd --zone=public --permanent --add-port=6000/tcp
     firewall-cmd --zone=public --permanent --add-port=7000/tcp
     firewall-cmd --zone=public --permanent --add-port=7688/tcp
-    firewall-cmd --zone=public --permanent --add-port=8080/tcp
 }
 
 mount_data_disk() {
   #
   # For production systems, consider pre-allocating and formatting disks and only mount
   # within this startup script
-  #
   #
   # Also for production, separate data and transaction logs directories specified in neo4j.conf
   # server.directories.data
@@ -276,14 +274,14 @@ enableSecondaryServers() {
 if [ `yum list --installed | grep neo4j | wc -l` == 0 ]; then
     echo "Neo4j not installed"
 
-    #mount_data_disk
+    mount_data_disk
     configure_firewalld
     install_neo4j_from_yum
     install_apoc_plugin
     extension_config
-    build_neo4j_conf_file
     configure_graph_data_science
     configure_bloom
+    build_neo4j_conf_file
     start_neo4j
     enableSecondaryServers
 else

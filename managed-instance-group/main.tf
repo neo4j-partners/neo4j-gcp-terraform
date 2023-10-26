@@ -20,7 +20,7 @@ resource "google_compute_instance_template" "neo4j-node-instance-template" {
     source_image = var.vm_os_image
     boot         = true
     disk_type    = var.neo4j_disk_type
-    disk_size_gb = var.neo4j_disk_size
+    disk_size_gb = 20
     auto_delete  = var.vm_boot_disk_delete_on_termination
 
     labels = {
@@ -35,10 +35,8 @@ resource "google_compute_instance_template" "neo4j-node-instance-template" {
     device_name   = "sbd"
     auto_delete   = var.vm_boot_disk_delete_on_termination
     boot          = false
-    #disk_type     = "local-ssd"
-    disk_type     = "pd-ssd"
-    disk_size_gb  = 375
-    #interface     = "NVME"
+    disk_type     = var.neo4j_disk_type
+    disk_size_gb  = var.neo4j_disk_size
     mode          = "READ_WRITE"
     #type          = "SCRATCH" 
     type          = "PERSISTENT" 
