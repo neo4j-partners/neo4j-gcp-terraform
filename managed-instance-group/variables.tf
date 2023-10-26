@@ -75,6 +75,7 @@ variable "installBloom" {
 variable "bloomLicenseKey" {
   description = "License key for the Neo4j Bloom plugin"
   type        = string
+  default     = ""
 }
 
 variable "gdsNodeCount" {
@@ -84,8 +85,9 @@ variable "gdsNodeCount" {
 }
 
 variable "graphDataScienceLicenseKey" {
-    description = "GDS license to be used by this Terraform deployment"
-    type = string
+  description = "GDS license to be used by this Terraform deployment"
+  type = string
+  default     = ""
 }
 
 variable "vpc_name" {
